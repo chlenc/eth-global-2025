@@ -42,6 +42,7 @@ def fetch_hyperliquid_markets() -> List[Dict]:
             "next_funding_time": next_funding_time
         })
     
+    rows.sort(key=lambda x: x['funding_rate'], reverse=True)
     return rows
 
 def format_time_until_funding(next_funding_time: dt.datetime) -> str:
@@ -93,9 +94,6 @@ def format_price(price: float) -> str:
 
 def print_hyperliquid_markets_table(markets):
     """Creates and displays a beautiful table with Hyperliquid data"""
-    
-    # Sort by funding rate (highest first)
-    markets.sort(key=lambda x: x['funding_rate'], reverse=True)
     
     # Take top 10
     top_markets = markets[:10]
