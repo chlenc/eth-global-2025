@@ -99,6 +99,13 @@ def print_hyperliquid_markets_table(markets):
     top_markets = markets[:10]
     
     print(f"\n📊 TOP-10 HYPERLIQUID MARKETS BY FUNDING RATE")
+       # Statistics
+    total_volume = sum(m['volume_24h_usd'] for m in top_markets)
+    avg_funding = sum(m['funding_rate'] for m in top_markets) / len(top_markets) * 100
+    
+    print(f"   Total 24h Volume: {format_volume(total_volume)}")
+    print(f"   Average Funding Rate: {avg_funding:.4f}%")
+    print(f"   Highest Funding Rate: {top_markets[0]['funding_rate']*100:.4f}% ({top_markets[0]['coin']})")
     print("=" * 110)
     print(f"{'Market':<12} {'Price':<12} {'Funding/hr':<12} {'24h Volume':<12} {'Next Funding':<25}")
     print("-" * 110)
@@ -138,14 +145,6 @@ def print_hyperliquid_markets_table(markets):
     
     print("-" * 110)
     
-    # Statistics
-    total_volume = sum(m['volume_24h_usd'] for m in top_markets)
-    avg_funding = sum(m['funding_rate'] for m in top_markets) / len(top_markets) * 100
-    
-    print(f"\n📈 TOP-10 STATISTICS:")
-    print(f"   Total 24h Volume: {format_volume(total_volume)}")
-    print(f"   Average Funding Rate: {avg_funding:.4f}%")
-    print(f"   Highest Funding Rate: {top_markets[0]['funding_rate']*100:.4f}% ({top_markets[0]['coin']})")
     print()
 
 # Для обратной совместимости

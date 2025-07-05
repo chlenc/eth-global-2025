@@ -25,7 +25,7 @@ class FundingRateArbitrage:
         
         # System settings
         self.trade_amount_usdc = 10  # $10 USDC
-        self.min_funding_rate = 0.000015   # 0.1% minimum funding rate for arbitrage
+        self.min_funding_rate = 0.00001   # 0.1% minimum funding rate for arbitrage
         
         self.arbitrum_connector = ArbitrumConnector(ARBITRUM_RPC)
         self.fetch_balances()
@@ -51,7 +51,18 @@ class FundingRateArbitrage:
 
         print_hyperliquid_markets_table(self.markets)
         
-
+        if self.markets and self.markets[0]['funding_rate'] >= self.min_funding_rate:
+            # Calculate potential hourly profit
+            hourly_funding_rate = self.markets[0]['funding_rate']
+            potential_hourly_profit = self.trade_amount_usdc * hourly_funding_rate
+            
+            print(f"✅ Found arbitrage opportunity: {self.markets[0]['coin']}")
+            print(f"   Funding rate: {hourly_funding_rate*100:.4f}%")
+            print(f"   Hourly profit: ${potential_hourly_profit:.4f}")
+            print(f"   Trade amount: ${self.trade_amount_usdc}")
+        else:
+            print("❌ No arbitrage opportunities found")
+            print()
        
         
         # if opportunity:
