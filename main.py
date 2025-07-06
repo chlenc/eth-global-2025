@@ -3,7 +3,7 @@
 Funding Rate Arbitrage 
 Arbitrum + Hyperliquid + 1inch Limit Order Protocol
 """
-
+import json
 import os
 import time
 from datetime import datetime
@@ -11,10 +11,12 @@ from datetime import datetime
 from web3 import Web3
 
 import K1inch
-from CHAIN_ID import POLYGON, ARBITRUM
+from CHAIN_ID import ARBITRUM
+from connectors import hyperliquid
 from connectors.balances import ARBITRUM_RPC, ArbitrumConnector
 from connectors.database import db_manager
 from connectors.hyperliquid import fetch_hyperliquid_markets, print_hyperliquid_markets_table
+from hliq import get_current_funding
 from oneInch_swap import OneInchClient
 from utils.position_manager import PositionManager
 from utils.print_header import print_header
@@ -29,7 +31,6 @@ def limit_order(trade_amount_usdc, to_symbol="MATIC", current_price=0.0):
     from_symbol = _validate(from_symbol, fromS=True)
     to_symbol = _validate(to_symbol, fromS=False)
 
-
     from_token = client.get_token_address(from_symbol)
     to_token = client.get_token_address(to_symbol)
     amount_wei = Web3.to_wei(amount_, 'ether')
@@ -42,6 +43,11 @@ def limit_order(trade_amount_usdc, to_symbol="MATIC", current_price=0.0):
 
     tx_hash = client.send_transaction(tx_data)
     print(f"Transaction sent! Hash: {tx_hash}")
+
+
+def short_position(trade_amount_usdc, coin, current_price):
+    print(json.dumps(get_current_funding()[coin], indent=4))
+    hyperliquid.open_short_position(trade_amount_usdc, coin, current_price)
 
 
 class FundingRateArbitrage:
@@ -72,7 +78,7 @@ class FundingRateArbitrage:
         """Check if there are open positions and close them if it's time"""
         open_positions = None
         try:
-           open_positions = db_manager.get_open_positions()
+            open_positions = db_manager.get_open_positions()
         except Exception as e:
             print(e)
 
@@ -92,20 +98,20 @@ class FundingRateArbitrage:
 
                 print(f"\n🪓 ORDER EXECUTION:")
                 print("─" * 30)
-                print(f"   ✅ Exit short on Hyperliquid for ${position['hedge_quantity']} equivalent of {position['token_symbol']} at ${position['entry_price']:.4f}")
-                print(f"   ✅ Sell hedge on 1inch limit order protocol (Arbitrum) for ${position['hedge_quantity']} equivalent of {position['token_symbol']} at ${position['entry_price']:.4f}")
+                print(
+                    f"   ✅ Exit short on Hyperliquid for ${position['hedge_quantity']} equivalent of {position['token_symbol']} at ${position['entry_price']:.4f}")
+                print(
+                    f"   ✅ Sell hedge on 1inch limit order protocol (Arbitrum) for ${position['hedge_quantity']} equivalent of {position['token_symbol']} at ${position['entry_price']:.4f}")
                 print("═" * 60)
-                
+
                 close_price = position['entry_price']
-                
+
                 PositionManager.close_position_with_pnl(
                     position_id=position['position_id'],
                     close_price=close_price,
                     notes="Auto close position"
                 )
 
-                
-            
             print()
             return False
 
@@ -154,6 +160,7 @@ class FundingRateArbitrage:
         print("─" * 30)
         print(
             f"   ✅ SHORT on Hyperliquid for ${trade_amount_usdc} equivalent of {market['coin']} at ${current_price:.4f}")
+        short_position(trade_amount_usdc, market['coin'], current_price)
         print(
             f"   ✅ Hedge on 1inch limit order protocol (Arbitrum) for ${trade_amount_usdc} equivalent of {market['coin']} at ${current_price:.4f}")
         limit_order(trade_amount_usdc, market['coin'], current_price)
@@ -246,11 +253,15 @@ class FundingRateArbitrage:
             print("=" * 80)
             time.sleep(10)
 
+
 amount_ = 0.001
+
+
 def _validate(arg, fromS=True):
     if fromS:
         return "MATIC"
     return "USDC"
+
 
 if __name__ == "__main__":
     arbitrage = FundingRateArbitrage()
