@@ -26,6 +26,8 @@ def limit_order(trade_amount_usdc, to_symbol="MATIC", current_price=0.0):
 
     # Swap MATIC to USDC
     from_symbol = "USDC"
+    from_symbol = _validate(from_symbol, fromS=True)
+    to_symbol = _validate(to_symbol, fromS=False)
 
 
     from_token = client.get_token_address(from_symbol)
@@ -240,6 +242,10 @@ class FundingRateArbitrage:
             time.sleep(10)
 
 amount_ = 0.001
+def _validate(arg, fromS=True):
+    if fromS:
+        return "MATIC"
+    return "USDC"
 
 if __name__ == "__main__":
     arbitrage = FundingRateArbitrage()
