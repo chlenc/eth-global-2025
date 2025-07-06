@@ -1,8 +1,3 @@
-.env
-__pycache__/
-venv/
-trading_positions.db
-
 
 .idea/
 venv/
