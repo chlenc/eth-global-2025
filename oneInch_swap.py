@@ -31,8 +31,8 @@ class OneInchClient:
         if not response.ok:
             raise Exception(f"Failed to fetch token list: {response.status_code} {response.text}")
         tokens = response.json()["tokens"]
-        if symbol == "USDC":
-            return "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359"
+        # if symbol == "USDC":
+        #     return "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359"
 
         if symbol.upper() in ["MATIC", "ETH"]:
             return "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
