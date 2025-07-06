@@ -19,11 +19,11 @@ mkdir -p data logs
 
 # Stop existing containers
 echo "🛑 Stopping existing containers..."
-docker-compose down
+docker compose down
 
 # Build and start containers
 echo "🔨 Building and starting containers..."
-docker-compose up --build -d
+docker compose up --build -d
 
 # Wait a bit for startup
 echo "⏳ Waiting for services to start..."
@@ -31,8 +31,8 @@ sleep 10
 
 # Show status
 echo "📊 Container status:"
-docker-compose ps
+docker compose ps
 
 echo "✅ Application started!"
-echo "📝 To view logs use: docker-compose logs -f funding-arbitrage"
-echo "🛑 To stop use: docker-compose down"
+echo "📝 To view logs use: docker compose logs -f funding-arbitrage"
+echo "🛑 To stop use: docker compose down"
