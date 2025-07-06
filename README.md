@@ -117,7 +117,28 @@ pip install -r requirements.txt
 
 ## Deployment
 
-### Docker Deployment (Recommended)
+### Fluence Network Deployment
+
+https://fluence.network
+
+![Fluence Network Deployment](telegram-cloud-photo-size-2-5427092367552409666-y.jpg)
+
+
+This project has been deployed on **Fluence Network**, a decentralized computing platform that provides:
+
+- **Decentralized Infrastructure**: No single point of failure
+- **Global Distribution**: Nodes distributed worldwide for optimal performance
+- **Cost Efficiency**: Pay-per-use computing resources
+- **Reliability**: Built-in redundancy and failover mechanisms
+
+#### Deployment Benefits on Fluence
+
+- **24/7 Uptime**: Continuous operation without manual intervention
+- **Scalability**: Automatically scales based on demand
+- **Security**: Decentralized execution environment
+- **Cost Optimization**: Only pay for actual compute time used
+
+### Docker Deployment (Recommended for Local/Private)
 
 The project includes Docker configuration for production deployment:
 
