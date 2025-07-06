@@ -3,7 +3,6 @@
 Funding Rate Arbitrage 
 Arbitrum + Hyperliquid + 1inch Limit Order Protocol
 """
-import json
 import os
 import time
 from datetime import datetime
@@ -11,8 +10,9 @@ from datetime import datetime
 
 from connectors.balances import ARBITRUM_RPC, ArbitrumConnector
 from connectors.database import db_manager
-from connectors.hyperliquid import fetch_hyperliquid_markets, print_hyperliquid_markets_table
+from connectors.hyperliquid import fetch_hyperliquid_markets
 from utils.position_manager import PositionManager
+from utils.print_funding_rate_table import print_hyperliquid_markets_table
 from utils.print_header import print_header
 
 class FundingRateArbitrage:
@@ -50,9 +50,9 @@ class FundingRateArbitrage:
         if not open_positions:
             return False
 
-        # TODO: use after debug replance get_positions_to_close to get_open_positions
-        # positions_to_close = db_manager.get_positions_to_close() 
-        positions_to_close = db_manager.get_open_positions()
+        #? : for faster debug replance get_positions_to_close to get_open_positions
+        # positions_to_close = db_manager.get_open_positions()
+        positions_to_close = db_manager.get_positions_to_close() 
 
         if positions_to_close:
             print(f"\n🚪 CLOSING {len(positions_to_close)} POSITIONS:")
