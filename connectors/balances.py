@@ -4,6 +4,10 @@ from typing import Dict, Optional
 from web3 import Web3
 import os
 
+import K1inch
+from CHAIN_ID import ARBITRUM
+from oneInch_swap import OneInchClient
+
 # Arbitrum RPC endpoints
 ARBITRUM_RPC = "https://arb1.arbitrum.io/rpc"
 
@@ -80,35 +84,16 @@ class ArbitrumConnector:
             return balance
             
         except Exception as e:
-            print(f"❌ Error getting token balance: {e}")
-            return None
+            print(f"Error getting token balance: {e}")
+            return 0
     
     def get_eth_balance(self, wallet_address: str) -> Optional[float]:
-        """
-        Get ETH balance for a wallet address
-        
-        Args:
-            wallet_address: Wallet address to check
-            
-        Returns:
-            ETH balance as float, or None if error
-        """
-        try:
-            # Normalize address (remove checksum validation)
-            normalized_address = self.w3.to_checksum_address(wallet_address.lower())
-            
-            # Get balance in wei
-            balance_wei = self.w3.eth.get_balance(normalized_address)
-            
-            # Convert to ETH
-            balance_eth = self.w3.from_wei(balance_wei, 'ether')
-            
-            return float(balance_eth)
-            
-        except Exception as e:
-            print(f"❌ Error getting ETH balance: {e}")
-            return None
-    
+        client = OneInchClient(chain_id=ARBITRUM, private_key=K1inch.PRIVATE_KEY, api_key=K1inch.API_KEY)
+        balance = client.web3.eth.get_balance(client.account.address)
+        balance_eth = client.web3.from_wei(balance, "ether")
+        print(f"Balance: {balance_eth} tokens")
+        return balance_eth
+
     def get_wallet_balances(self, wallet_address: str) -> Dict[str, float]:
         """
         Get ETH, USDC and USDT balances for a wallet

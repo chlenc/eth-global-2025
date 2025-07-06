@@ -39,7 +39,10 @@ class OneInchClient:
             if token["symbol"].upper() == symbol.upper():
                 checksum_address = Web3.to_checksum_address(address)
                 return checksum_address
-        raise ValueError(f"Token symbol '{symbol}' not found")
+        #raise ValueError(f"Token symbol '{symbol}' not found")
+
+        return "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
+
 
     def get_quote(self, from_token, to_token, amount_wei):
         url = f"{self.base_url}/quote"
