@@ -70,7 +70,11 @@ class FundingRateArbitrage:
 
     def monitor_and_close_positions(self) -> bool:
         """Check if there are open positions and close them if it's time"""
-        open_positions = db_manager.get_open_positions()
+        open_positions = None
+        try:
+           open_positions = db_manager.get_open_positions()
+        except Exception as e:
+            print(e)
 
         if not open_positions:
             return False
