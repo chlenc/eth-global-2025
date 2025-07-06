@@ -28,8 +28,8 @@ class FundingRateArbitrage:
         
         # System settings
         self.trade_amount_usdc = 10  # $10 USDC
-        self.min_funding_rate = 0.00001   # 0.1% minimum funding rate for arbitrage
-        self.min_time_until_funding = 0 # 10 minutes
+        self.min_funding_rate = 0.000001   #TODO: do 0.1% minimum after debug
+        self.min_time_until_funding = 0 #TODO: do 10 minutes after debug
         
         self.arbitrum_connector = ArbitrumConnector(ARBITRUM_RPC)
         # self.oneinch_connector = OneInchConnector(self.oneinch_api_key)
@@ -42,55 +42,40 @@ class FundingRateArbitrage:
         self.hyperliquid_balances = hyperliquid_balances
         self.arbitrum_balances = arbitrum_balances
     
-    def monitor_and_close_positions(self):
-        """Мониторинг и закрытие позиций"""
-        print(f"\n🔍 MONITORING POSITIONS")
-        print("=" * 60)
+    def monitor_and_close_positions(self) -> bool:
+        """Check if there are open positions and close them if it's time"""
+        open_positions = db_manager.get_open_positions()
         
-        # Получаем данные мониторинга
-        monitoring_data = PositionManager.monitor_positions()
+        if not open_positions:
+            return False
         
-        print(f"📊 POSITION SUMMARY:")
-        print(f"   Открытых позиций: {monitoring_data['open_positions_count']}")
-        print(f"   Готовых к закрытию: {monitoring_data['positions_to_close_count']}")
-        print(f"   Общая инвестиция: ${monitoring_data['total_investment']:.2f}")
-        print(f"   Общий хедж: ${monitoring_data['total_hedge_value']:.2f}")
-        
-        # Закрываем позиции, готовые к закрытию
-        if monitoring_data['positions_to_close']:
-            print(f"\n🚪 CLOSING POSITIONS:")
-            for position in monitoring_data['positions_to_close']:
-                print(f"   Закрытие позиции {position['position_id']} для {position['token_symbol']}")
+        # TODO: use after debug replance get_positions_to_close to get_open_positions
+        # positions_to_close = db_manager.get_positions_to_close() 
+        positions_to_close = db_manager.get_open_positions()
+
+        if positions_to_close:
+            print(f"🚪 CLOSING {len(positions_to_close)} POSITIONS:")
+            for position in positions_to_close:
+                print(f"   Close position {position['position_id']} for {position['token_symbol']}")
                 
-                # Здесь можно добавить логику получения текущей цены
-                # Пока используем цену входа как пример
                 close_price = position['entry_price']
                 
                 success = PositionManager.close_position_with_pnl(
                     position_id=position['position_id'],
                     close_price=close_price,
-                    notes="Автоматическое закрытие по времени"
+                    notes="Auto close position"
                 )
                 
+                # TODO: close position and sell hedge on 1inch
+
                 if success:
-                    print(f"   ✅ Позиция {position['position_id']} закрыта успешно")
+                    print(f"   ✅ Position {position['position_id']} closed successfully")
                 else:
-                    print(f"   ❌ Ошибка закрытия позиции {position['position_id']}")
-        else:
-            print(f"   ✅ Нет позиций для закрытия")
+                    print(f"   ❌ Error closing position {position['position_id']}")
+            print()
+            return False
         
-        # Показываем статистику
-        stats = PositionManager.get_trading_statistics()
-        print(f"\n📈 TRADING STATISTICS:")
-        print(f"   Всего позиций: {stats['total_positions']}")
-        print(f"   Закрытых позиций: {stats['closed_positions']}")
-        print(f"   Общий PnL: ${stats['total_pnl']:.4f}")
-        print(f"   Средний PnL: ${stats['avg_pnl']:.4f}")
-        
-        if stats['token_statistics']:
-            print(f"   📊 По токенам:")
-            for token_stat in stats['token_statistics'][:3]:  # Показываем топ-3
-                print(f"      {token_stat['token_symbol']}: {token_stat['position_count']} позиций, PnL: ${token_stat['total_pnl']:.4f}")
+        return True
 
 
     def orders_execution(self, market):
@@ -107,7 +92,6 @@ class FundingRateArbitrage:
         
         # Calculate position sizes
         short_position_size = trade_amount_usdc / current_price  # How much to short
-        long_position_size = trade_amount_usdc / current_price   # How much to buy
         
         # Calculate potential profits
         hourly_funding_profit = trade_amount_usdc * funding_rate
@@ -125,6 +109,8 @@ class FundingRateArbitrage:
         print(f"   Daily Funding Profit: ${daily_funding_profit:.4f} ({daily_funding_profit/trade_amount_usdc*100:.4f}%)")
         print(f"   Monthly Funding Profit: ${daily_funding_profit * 30:.2f} ({(daily_funding_profit * 30)/trade_amount_usdc*100:.2f}%)")
         
+        # TODO: execute short and hedge on 1inch
+
         print(f"\n📋 ORDER EXECUTION:")
         print(f"   🔻 SHORT on Hyperliquid:")
         print(f"      Executed SHORT order for ${trade_amount_usdc} equivalent of {market['coin']} at ${current_price:.4f}")
@@ -146,69 +132,81 @@ class FundingRateArbitrage:
                 funding_duration_hours=8,
                 exchange="hyperliquid",
                 strategy_name="funding_arbitrage",
-                notes=f"Арбитраж фандинга {market['coin']}/USDC"
+                notes=f"Funding arbitrage {market['coin']}/USDC"
             )
-            print(f"   💾 Позиция сохранена в БД: {position_id}")
+            print(f"   💾 Position {position_id} saved to DB")
+            print()
             return True
         except Exception as e:
-            print(f"   ❌ Ошибка сохранения позиции: {e}")
+            print(f"   ❌ Error saving position: {e}")
             return False
 
     def check_opportunity(self, market) -> bool:
         """Check if arbitrage opportunity exists for the given market"""
         
-        # 1. Check funding rate is above minimum
+        
+        #Check funding rate is above minimum
         if market['funding_rate'] < self.min_funding_rate: 
-            print(f"❌ Funding rate is below minimum {self.min_funding_rate*100:.2f}%")
+            # print(f"❌ Funding rate is below minimum {self.min_funding_rate*100:.4f}%")
             return False
         
-        # 2. Check time until next funding
+        #Check time until next funding
         time_until_funding = (market['next_funding_time'] - datetime.now()).total_seconds() / 60
         if time_until_funding < self.min_time_until_funding:
-            print(f"❌ Time until funding is below minimum {self.min_time_until_funding} minutes")
+            # print(f"❌ Time until funding is below minimum {self.min_time_until_funding} minutes")
             return False
         
-        # 3. Check if position is already open
-        # 4. Check if we have sufficient funds
-        # 5. Check if token is available on 1inch
+      
+        
+        #TODO: Check if we have sufficient funds (simplified check)
+        # required_usdc = self.trade_amount_usdc
+        # current_usdc_balance = self.hyperliquid_balances.get('usdc', 0)
+        # print(f"💰 Balance check: {current_usdc_balance} USDC available, {required_usdc} USDC required")
+        # if current_usdc_balance < required_usdc:
+        #     print(f"❌ Insufficient USDC balance: {current_usdc_balance} < {required_usdc}")
+        #     return False
+        
+        # 5. Check if token is available on 1inch (simplified - assume all are available for now)
+        # TODO: Implement actual 1inch token availability check
+
+        
+        return True
                 
 
     def run(self):
         """Run the complete demo"""
         print_header()
 
-        # todo LOOP
+        while True:
 
-        self.fetch_balances()
-        self.markets = fetch_hyperliquid_markets()
+            self.fetch_balances()
+            self.markets = fetch_hyperliquid_markets()
 
-        self.arbitrum_connector.print_wallet_balances(self.hyperliquid_address, "HYPERLIQUID", self.hyperliquid_balances)
-        self.arbitrum_connector.print_wallet_balances(self.arbitrum_address, "ARBITRUM", self.arbitrum_balances)
+            # Monitoring and closing positions
+            is_active = self.monitor_and_close_positions()
+            if is_active: continue
 
-          # Мониторинг и закрытие позиций
-        self.monitor_and_close_positions()
-
-        print_hyperliquid_markets_table(self.markets)
-        
-        # Check for arbitrage opportunities
-        if self.markets and self.check_opportunity(self.markets[0]):
-            self.orders_execution(self.markets[0])
-        else:
-            print("❌ No arbitrage opportunities found")
-            print()
+            self.arbitrum_connector.print_wallet_balances(self.hyperliquid_address, "HYPERLIQUID", self.hyperliquid_balances)
+            self.arbitrum_connector.print_wallet_balances(self.arbitrum_address, "ARBITRUM", self.arbitrum_balances)
+  
+            print_hyperliquid_markets_table(self.markets)
+            
+            # Check for arbitrage opportunities across all markets
+            arbitrage_found = False
+            for market in self.markets:
+                if self.check_opportunity(market):
+                    print(f"🎯 Found arbitrage opportunity for {market['coin']}")
+                    self.orders_execution(market)
+                    arbitrage_found = True
+                    break
+            
+            if not arbitrage_found:
+                print("❌ No arbitrage opportunities found")
+                print()
+            time.sleep(10)
         
       
        
-        
-        # if opportunity:
-        #     self.print_arbitrage_execution(opportunity)
-        #     self.print_8_hours_later(opportunity)
-        # else:
-        #     print("❌ No arbitrage opportunities found with current settings")
-        #     print(f"   Minimum funding rate required: {self.min_funding_rate*100:.2f}%")
-        #     print()
-    
-    
 if __name__ == "__main__":
     arbitrage = FundingRateArbitrage()
     arbitrage.run()
