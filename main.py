@@ -50,7 +50,8 @@ class FundingRateArbitrage:
         self.arbitrum_private_key = os.environ.get("ARBITRUM_PRIVATE_KEY")
         self.hyperliquid_address = os.environ.get("HYPERLIQUID_ADDRESS")
         self.hyperliquid_private_key = os.environ.get("HYPERLIQUID_PRIVATE_KEY")
-        self.oneinch_api_key = os.environ.get("1INCH_API_KEY")
+
+        self.oneinch_api_key = os.environ.get("ONEINCH_API_KEY")
 
         # System settings
         self.trade_amount_usdc = 10  # $10 USDC

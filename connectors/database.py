@@ -7,8 +7,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 class DatabaseManager:
-    def __init__(self, db_path: str = "trading_positions.db"):
+    def __init__(self, db_path: str = None):
+        if db_path is None:
+            # Use path in Docker container
+            db_path = os.path.join("/app/data", "trading_positions.db")
         self.db_path = db_path
+        # Create directory if it doesn't exist
+        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         self.init_database()
     
     def get_connection(self):
@@ -18,7 +23,7 @@ class DatabaseManager:
         with self.get_connection() as conn:
             cursor = conn.cursor()
             
-            # Создание таблицы для открытых позиций
+            # Create table for open positions
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS open_positions (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -44,7 +49,7 @@ class DatabaseManager:
                 )
             ''')
             
-            # Создание индексов для быстрого поиска
+            # Create indexes for fast search
             cursor.execute('''
                 CREATE INDEX IF NOT EXISTS idx_position_status ON open_positions(status)
             ''')
@@ -58,7 +63,7 @@ class DatabaseManager:
                 CREATE INDEX IF NOT EXISTS idx_token_symbol ON open_positions(token_symbol)
             ''')
             
-            # Создание таблицы для истории операций
+            # Create table for operation history
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS position_history (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -76,10 +81,10 @@ class DatabaseManager:
             ''')
             
             conn.commit()
-            logger.info("База данных инициализирована успешно")
+            logger.info("Database initialized successfully")
     
     def create_position(self, position_data: Dict[str, Any]) -> str:
-        """Создание новой открытой позиции"""
+        """Create new open position"""
         required_fields = [
             'position_id', 'token_symbol', 'token_address', 'position_type',
             'entry_price', 'quantity', 'hedge_quantity', 'hedge_token_symbol',
@@ -89,7 +94,7 @@ class DatabaseManager:
         
         for field in required_fields:
             if field not in position_data:
-                raise ValueError(f"Отсутствует обязательное поле: {field}")
+                raise ValueError(f"Missing required field: {field}")
         
         with self.get_connection() as conn:
             cursor = conn.cursor()
@@ -119,7 +124,7 @@ class DatabaseManager:
                 position_data.get('notes', '')
             ))
             
-            # Записываем действие открытия в историю
+            # Write opening action to history
             cursor.execute('''
                 INSERT INTO position_history (
                     position_id, action, price, quantity, tx_hash, notes
@@ -130,20 +135,20 @@ class DatabaseManager:
                 position_data['entry_price'],
                 position_data['quantity'],
                 position_data.get('tx_hash', ''),
-                'Позиция открыта'
+                'Position opened'
             ))
             
             conn.commit()
-            logger.info(f"Позиция {position_data['position_id']} создана успешно")
+            logger.info(f"Position {position_data['position_id']} created successfully")
             return position_data['position_id']
     
     def close_position(self, position_id: str, close_price: float, 
                       pnl: float, tx_hash: str = '', notes: str = '') -> bool:
-        """Закрытие позиции"""
+        """Close position"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             
-            # Обновляем статус позиции
+            # Update position status
             cursor.execute('''
                 UPDATE open_positions 
                 SET status = 'CLOSED', pnl = ?, updated_at = CURRENT_TIMESTAMP
@@ -151,10 +156,10 @@ class DatabaseManager:
             ''', (pnl, position_id))
             
             if cursor.rowcount == 0:
-                logger.warning(f"Позиция {position_id} не найдена или уже закрыта")
+                logger.warning(f"Position {position_id} not found or already closed")
                 return False
             
-            # Записываем действие закрытия в историю
+            # Write closing action to history
             cursor.execute('''
                 INSERT INTO position_history (
                     position_id, action, price, quantity, tx_hash, notes
@@ -163,17 +168,17 @@ class DatabaseManager:
                 position_id,
                 'CLOSE',
                 close_price,
-                0,  # quantity при закрытии
+                0,  # quantity when closing
                 tx_hash,
-                notes or 'Позиция закрыта'
+                notes or 'Position closed'
             ))
             
             conn.commit()
-            logger.info(f"Позиция {position_id} закрыта успешно, PnL: {pnl}")
+            logger.info(f"Position {position_id} closed successfully, PnL: {pnl}")
             return True
     
     def get_open_positions(self) -> List[Dict[str, Any]]:
-        """Получение всех открытых позиций"""
+        """Get all open positions"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
@@ -191,7 +196,7 @@ class DatabaseManager:
             return positions
     
     def get_positions_to_close(self, current_time: Optional[datetime] = None) -> List[Dict[str, Any]]:
-        """Получение позиций, которые нужно закрыть"""
+        """Get positions that need to be closed"""
         if current_time is None:
             current_time = datetime.now()
         
@@ -213,7 +218,7 @@ class DatabaseManager:
             return positions
     
     def get_position_by_id(self, position_id: str) -> Optional[Dict[str, Any]]:
-        """Получение позиции по ID"""
+        """Get position by ID"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
@@ -227,7 +232,7 @@ class DatabaseManager:
             return None
     
     def update_position(self, position_id: str, updates: Dict[str, Any]) -> bool:
-        """Обновление позиции"""
+        """Update position"""
         allowed_fields = [
             'entry_price', 'quantity', 'hedge_quantity', 'funding_rate',
             'funding_end_time', 'close_time', 'notes'
@@ -274,7 +279,7 @@ class DatabaseManager:
             return False
     
     def get_position_history(self, position_id: str) -> List[Dict[str, Any]]:
-        """Получение истории позиции"""
+        """Get position history"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
@@ -293,7 +298,7 @@ class DatabaseManager:
             return history
     
     def get_statistics(self) -> Dict[str, Any]:
-        """Получение статистики по позициям"""
+        """Get statistics by positions"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             
@@ -340,13 +345,13 @@ class DatabaseManager:
             }
     
     def cleanup_old_positions(self, days: int = 30) -> int:
-        """Очистка старых закрытых позиций"""
+        """Cleanup old closed positions"""
         cutoff_date = datetime.now() - timedelta(days=days)
         
         with self.get_connection() as conn:
             cursor = conn.cursor()
             
-            # Удаляем старые записи из истории
+            # Delete old records from history
             cursor.execute('''
                 DELETE FROM position_history 
                 WHERE position_id IN (
@@ -357,7 +362,7 @@ class DatabaseManager:
             
             history_deleted = cursor.rowcount
             
-            # Удаляем старые закрытые позиции
+            # Delete old closed positions
             cursor.execute('''
                 DELETE FROM open_positions 
                 WHERE status = 'CLOSED' AND updated_at < ?
@@ -369,5 +374,5 @@ class DatabaseManager:
             logger.info(f"Удалено {positions_deleted} позиций и {history_deleted} записей истории")
             return positions_deleted
 
-# Создание глобального экземпляра менеджера базы данных
+# Create global instance of database manager
 db_manager = DatabaseManager() 

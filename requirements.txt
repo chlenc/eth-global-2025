@@ -11,6 +11,7 @@ requests~=2.32.3
 web3~=7.9.0
 openai~=1.82.1
 
+
 # Type hints and annotations
 typing_extensions==4.14.1
 typing-inspection==0.4.1
