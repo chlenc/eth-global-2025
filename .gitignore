@@ -22,3 +22,6 @@ lambos/.DS_Store
 /btc/seed.py
 
 K1inch.py
+
+.venv/
+K1inch.py
