@@ -46,7 +46,7 @@ def limit_order(trade_amount_usdc, to_symbol="MATIC", current_price=0.0):
 
 
 def short_position(trade_amount_usdc, coin, current_price):
-    print(json.dumps(get_current_funding()[coin], indent=4))
+    print(json.dumps(get_current_funding(), indent=4))
     hyperliquid.open_short_position(trade_amount_usdc, coin, current_price)
 
 
@@ -184,7 +184,7 @@ class FundingRateArbitrage:
             print("═" * 60)
             return True
         except Exception as e:
-            print(f"   ❌ Error saving position: {e}")
+            # print(f"   ❌ Error saving position: {e}")
             print("═" * 60)
             return False
 

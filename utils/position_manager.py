@@ -79,7 +79,7 @@ class PositionManager:
             logger.info(f"Создана позиция арбитража: {position_id} для {token_symbol}")
             return position_id
         except Exception as e:
-            logger.error(f"Ошибка создания позиции: {e}")
+            # logger.error(f"Ошибка создания позиции: {e}")
             raise
     
     @staticmethod
