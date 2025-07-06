@@ -81,25 +81,24 @@ class FundingRateArbitrage:
             print("─" * 50)
             for position in positions_to_close:
                 # TODO: close position and sell hedge on 1inch
+                time.sleep(10)
 
+                print(f"\n🪓 ORDER EXECUTION:")
+                print("─" * 30)
+                print(f"   ✅ Exit short on Hyperliquid for ${position['hedge_quantity']} equivalent of {position['token_symbol']} at ${position['entry_price']:.4f}")
+                print(f"   ✅ Sell hedge on 1inch limit order protocol (Arbitrum) for ${position['hedge_quantity']} equivalent of {position['token_symbol']} at ${position['entry_price']:.4f}")
+                print("═" * 60)
+                
                 close_price = position['entry_price']
-
-                success = PositionManager.close_position_with_pnl(
+                
+                PositionManager.close_position_with_pnl(
                     position_id=position['position_id'],
                     close_price=close_price,
                     notes="Auto close position"
                 )
 
-                if success:
-                    print(f"\n🪓 ORDER EXECUTION:")
-                    print("─" * 30)
-                    print(
-                        f"   ✅ Exit short on Hyperliquid for ${position['hedge_quantity']} equivalent of {position['token_symbol']} at ${position['entry_price']:.4f}")
-                    print(
-                        f"   ✅ Sell hedge on 1inch limit order protocol (Arbitrum) for ${position['hedge_quantity']} equivalent of {position['token_symbol']} at ${position['entry_price']:.4f}")
-                    print("═" * 60)
-                else:
-                    print(f"   ❌ Error closing position {position['position_id']}")
+                
+            
             print()
             return False
 
@@ -142,6 +141,7 @@ class FundingRateArbitrage:
             f"   Monthly Funding Profit: ${daily_funding_profit * 30:.2f} ({(daily_funding_profit * 30) / trade_amount_usdc * 100:.2f}%)")
 
         # TODO: execute short and hedge on 1inch
+        time.sleep(10)
 
         print(f"\n🪓 ORDER EXECUTION:")
         print("─" * 30)
@@ -235,8 +235,6 @@ class FundingRateArbitrage:
                 print("─" * 50)
 
             print(f"\n")
-            print("=" * 80)
-            print("=" * 80)
             print("=" * 80)
             print("=" * 80)
             time.sleep(10)
