@@ -38,6 +38,7 @@ class OneInchClient:
         for address, token in tokens.items():
             if token["symbol"].upper() == symbol.upper():
                 checksum_address = Web3.to_checksum_address(address)
+                print(f"{token} ---> {checksum_address}")
                 return checksum_address
         raise ValueError(f"Token symbol '{symbol}' not found")
 
@@ -64,7 +65,7 @@ class OneInchClient:
             "amount": str(amount_wei),
             "excludeProtocols": "UNISWAP_V2",
             "fromAddress": self.account.address,
-            "slippage": 2,
+            "slippage": 5,
             "disableEstimate": "false",
             # "disableEstimate": "true"
         }
@@ -80,7 +81,7 @@ class OneInchClient:
         tx_data["from"] = Web3.to_checksum_address(tx_data["from"])
         tx_data["to"] = Web3.to_checksum_address(tx_data["to"])
         tx_data["nonce"] = self.web3.eth.get_transaction_count(self.account.address)
-        tx_data["gasPrice"] = self.web3.eth.gas_price
+        tx_data["gasPrice"] = self.web3.eth.gas_price*2
         tx_data["value"] = int(tx_data["value"])
         # tx_data["gas"] = int(tx_data.get("gas", 250000))  # Default fallback
         tx_data = self.estimate_gas(tx_data)

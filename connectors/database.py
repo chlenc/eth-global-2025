@@ -373,6 +373,10 @@ class DatabaseManager:
             conn.commit()
             logger.info(f"Удалено {positions_deleted} позиций и {history_deleted} записей истории")
             return positions_deleted
-
+db_manager = None
 # Create global instance of database manager
-db_manager = DatabaseManager() 
+try:
+
+   db_manager = DatabaseManager()
+except Exception as e:
+    print(e)
