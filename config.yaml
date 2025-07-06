@@ -1,0 +1,9 @@
+rpcs:
+  arbitrum: https://arb1.arbitrum.io/rpc  # Replace with Alchemy or Infura RPC if needed
+
+chain_ids:
+  arbitrum: 42161
+
+# These are only needed for trade functions — leave dummy values
+private_key: "0x0000000000000000000000000000000000000000000000000000000000000000"
+user_wallet_address: "0x0000000000000000000000000000000000000000"
