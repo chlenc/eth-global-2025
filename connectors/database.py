@@ -9,8 +9,12 @@ logger = logging.getLogger(__name__)
 class DatabaseManager:
     def __init__(self, db_path: str = None):
         if db_path is None:
-            # Use path in Docker container
-            db_path = os.path.join("/app/data", "trading_positions.db")
+            # Use path in Docker container or local data directory
+            if os.path.exists("/app/data") and os.access("/app/data", os.W_OK):
+                db_path = os.path.join("/app/data", "trading_positions.db")
+            else:
+                # Local development
+                db_path = os.path.join(os.getcwd(), "data", "trading_positions.db")
         self.db_path = db_path
         # Create directory if it doesn't exist
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
@@ -373,10 +377,11 @@ class DatabaseManager:
             conn.commit()
             logger.info(f"Удалено {positions_deleted} позиций и {history_deleted} записей истории")
             return positions_deleted
-db_manager = None
+
 # Create global instance of database manager
 try:
-
-   db_manager = DatabaseManager()
+    db_manager = DatabaseManager()
+    logger.info("Database manager initialized successfully")
 except Exception as e:
-    print(e)
+    logger.error(f"Failed to initialize database manager: {e}")
+    db_manager = None

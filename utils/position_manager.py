@@ -75,6 +75,8 @@ class PositionManager:
         }
         
         try:
+            if db_manager is None:
+                raise Exception("Database manager is not initialized")
             db_manager.create_position(position_data)
             logger.info(f"Создана позиция арбитража: {position_id} для {token_symbol}")
             return position_id
@@ -85,6 +87,9 @@ class PositionManager:
     @staticmethod
     def get_positions_ready_to_close() -> List[Dict[str, Any]]:
         """Получение позиций, готовых к закрытию"""
+        if db_manager is None:
+            logger.error("Database manager is not initialized")
+            return []
         return db_manager.get_positions_to_close()
     
     @staticmethod
@@ -106,6 +111,10 @@ class PositionManager:
         Returns:
             True если позиция успешно закрыта
         """
+        if db_manager is None:
+            logger.error("Database manager is not initialized")
+            return False
+            
         position = db_manager.get_position_by_id(position_id)
         if not position:
             logger.error(f"Позиция {position_id} не найдена")
@@ -141,6 +150,17 @@ class PositionManager:
         Returns:
             Словарь с информацией о позициях
         """
+        if db_manager is None:
+            logger.error("Database manager is not initialized")
+            return {
+                'open_positions_count': 0,
+                'positions_to_close_count': 0,
+                'total_investment': 0,
+                'total_hedge_value': 0,
+                'open_positions': [],
+                'positions_to_close': []
+            }
+            
         open_positions = db_manager.get_open_positions()
         positions_to_close = db_manager.get_positions_to_close()
         
@@ -160,6 +180,9 @@ class PositionManager:
     @staticmethod
     def update_funding_rate(position_id: str, new_funding_rate: float) -> bool:
         """Обновление фандинг рейта для позиции"""
+        if db_manager is None:
+            logger.error("Database manager is not initialized")
+            return False
         return db_manager.update_position(position_id, {
             'funding_rate': new_funding_rate
         })
@@ -167,6 +190,10 @@ class PositionManager:
     @staticmethod
     def extend_position_time(position_id: str, additional_hours: int) -> bool:
         """Продление времени позиции"""
+        if db_manager is None:
+            logger.error("Database manager is not initialized")
+            return False
+            
         position = db_manager.get_position_by_id(position_id)
         if not position:
             return False
@@ -181,6 +208,10 @@ class PositionManager:
     @staticmethod
     def get_position_summary(position_id: str) -> Optional[Dict[str, Any]]:
         """Получение сводки по позиции"""
+        if db_manager is None:
+            logger.error("Database manager is not initialized")
+            return None
+            
         position = db_manager.get_position_by_id(position_id)
         if not position:
             return None
@@ -205,11 +236,17 @@ class PositionManager:
     @staticmethod
     def get_trading_statistics() -> Dict[str, Any]:
         """Получение торговой статистики"""
+        if db_manager is None:
+            logger.error("Database manager is not initialized")
+            return {}
         return db_manager.get_statistics()
     
     @staticmethod
     def cleanup_old_data(days: int = 30) -> int:
         """Очистка старых данных"""
+        if db_manager is None:
+            logger.error("Database manager is not initialized")
+            return 0
         return db_manager.cleanup_old_positions(days)
 
 # Пример использования

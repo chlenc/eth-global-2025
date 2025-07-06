@@ -8,47 +8,12 @@ import os
 import time
 from datetime import datetime
 
-from web3 import Web3
 
-import K1inch
-from CHAIN_ID import ARBITRUM
-from connectors import hyperliquid
 from connectors.balances import ARBITRUM_RPC, ArbitrumConnector
 from connectors.database import db_manager
 from connectors.hyperliquid import fetch_hyperliquid_markets, print_hyperliquid_markets_table
-from hliq import get_current_funding
-from oneInch_swap import OneInchClient
 from utils.position_manager import PositionManager
 from utils.print_header import print_header
-
-
-# https://arb1.arbitrum.io/rpc
-def limit_order(trade_amount_usdc, to_symbol="MATIC", current_price=0.0):
-    client = OneInchClient(chain_id=ARBITRUM, private_key=K1inch.PRIVATE_KEY, api_key=K1inch.API_KEY)
-
-    # Swap MATIC to USDC
-    from_symbol = "USDC"
-    from_symbol = _validate(from_symbol, fromS=True)
-    to_symbol = _validate(to_symbol, fromS=False)
-
-    from_token = client.get_token_address(from_symbol)
-    to_token = client.get_token_address(to_symbol)
-    amount_wei = Web3.to_wei(amount_, 'ether')
-
-    quote = client.get_quote(from_token, to_token, amount_wei)
-    print("Quote received:")
-    print(quote)
-
-    tx_data = client.build_swap_tx(from_token, to_token, amount_wei)
-
-    tx_hash = client.send_transaction(tx_data)
-    print(f"Transaction sent! Hash: {tx_hash}")
-
-
-def short_position(trade_amount_usdc, coin, current_price):
-    print(json.dumps(get_current_funding()[coin], indent=4))
-    hyperliquid.open_short_position(trade_amount_usdc, coin, current_price)
-
 
 class FundingRateArbitrage:
     def __init__(self):
@@ -160,10 +125,10 @@ class FundingRateArbitrage:
         print("─" * 30)
         print(
             f"   ✅ SHORT on Hyperliquid for ${trade_amount_usdc} equivalent of {market['coin']} at ${current_price:.4f}")
-        short_position(trade_amount_usdc, market['coin'], current_price)
+        # short_position(trade_amount_usdc, market['coin'], current_price)
         print(
             f"   ✅ Hedge on 1inch limit order protocol (Arbitrum) for ${trade_amount_usdc} equivalent of {market['coin']} at ${current_price:.4f}")
-        limit_order(trade_amount_usdc, market['coin'], current_price)
+        # limit_order(trade_amount_usdc, market['coin'], current_price)
 
         # Создаем запись в базе данных
         try:
@@ -253,14 +218,6 @@ class FundingRateArbitrage:
             print("=" * 80)
             time.sleep(10)
 
-
-amount_ = 0.001
-
-
-def _validate(arg, fromS=True):
-    if fromS:
-        return "MATIC"
-    return "USDC"
 
 
 if __name__ == "__main__":
