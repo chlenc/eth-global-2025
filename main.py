@@ -54,9 +54,10 @@ class FundingRateArbitrage:
         positions_to_close = db_manager.get_open_positions()
 
         if positions_to_close:
-            print(f"🚪 CLOSING {len(positions_to_close)} POSITIONS:")
+            print(f"\n🚪 CLOSING {len(positions_to_close)} POSITIONS:")
+            print("─" * 50)
             for position in positions_to_close:
-                print(f"   Close position {position['position_id']} for {position['token_symbol']}")
+                # TODO: close position and sell hedge on 1inch
                 
                 close_price = position['entry_price']
                 
@@ -66,10 +67,13 @@ class FundingRateArbitrage:
                     notes="Auto close position"
                 )
                 
-                # TODO: close position and sell hedge on 1inch
 
                 if success:
-                    print(f"   ✅ Position {position['position_id']} closed successfully")
+                    print(f"\n🪓 ORDER EXECUTION:")
+                    print("─" * 30)
+                    print(f"   ✅ Exit short on Hyperliquid for ${position['hedge_quantity']} equivalent of {position['token_symbol']} at ${position['entry_price']:.4f}")
+                    print(f"   ✅ Sell hedge on 1inch limit order protocol (Arbitrum) for ${position['hedge_quantity']} equivalent of {position['token_symbol']} at ${position['entry_price']:.4f}")
+                    print("═" * 60)
                 else:
                     print(f"   ❌ Error closing position {position['position_id']}")
             print()
@@ -83,7 +87,7 @@ class FundingRateArbitrage:
         Execute arbitrage orders: short on Hyperliquid and buy on 1inch
         """
         print(f"\n🚀 EXECUTING ARBITRAGE FOR {market['coin']}")
-        print("=" * 60)
+        print("═" * 60)
         
         # Calculate trade details
         trade_amount_usdc = self.trade_amount_usdc
@@ -98,6 +102,7 @@ class FundingRateArbitrage:
         daily_funding_profit = hourly_funding_profit * 24
         
         print(f"📊 TRADE DETAILS:")
+        print("─" * 30)
         print(f"   Coin: {market['coin']}")
         print(f"   Current Price: ${current_price:.4f}")
         print(f"   Funding Rate: {funding_rate*100:.4f}% per hour")
@@ -105,18 +110,17 @@ class FundingRateArbitrage:
         print(f"   Position Size: {short_position_size:.6f} {market['coin']}")
         
         print(f"\n💰 PROFIT CALCULATIONS:")
+        print("─" * 30)
         print(f"   Hourly Funding Profit: ${hourly_funding_profit:.4f} ({hourly_funding_profit/trade_amount_usdc*100:.4f}%)")
         print(f"   Daily Funding Profit: ${daily_funding_profit:.4f} ({daily_funding_profit/trade_amount_usdc*100:.4f}%)")
         print(f"   Monthly Funding Profit: ${daily_funding_profit * 30:.2f} ({(daily_funding_profit * 30)/trade_amount_usdc*100:.2f}%)")
         
         # TODO: execute short and hedge on 1inch
 
-        print(f"\n📋 ORDER EXECUTION:")
-        print(f"   🔻 SHORT on Hyperliquid:")
-        print(f"      Executed SHORT order for ${trade_amount_usdc} equivalent of {market['coin']} at ${current_price:.4f}")
-        
-        print(f"   🔐 Hedge on 1inch limit order protocol (Arbitrum):")
-        print(f"      Executed BUY order for ${trade_amount_usdc} equivalent of {market['coin']} at ${current_price:.4f}")
+        print(f"\n🪓 ORDER EXECUTION:")
+        print("─" * 30)
+        print(f"   ✅ SHORT on Hyperliquid for ${trade_amount_usdc} equivalent of {market['coin']} at ${current_price:.4f}")
+        print(f"   ✅ Hedge on 1inch limit order protocol (Arbitrum) for ${trade_amount_usdc} equivalent of {market['coin']} at ${current_price:.4f}")
 
         # Создаем запись в базе данных
         try:
@@ -134,11 +138,11 @@ class FundingRateArbitrage:
                 strategy_name="funding_arbitrage",
                 notes=f"Funding arbitrage {market['coin']}/USDC"
             )
-            print(f"   💾 Position {position_id} saved to DB")
-            print()
+            print("═" * 60)
             return True
         except Exception as e:
             print(f"   ❌ Error saving position: {e}")
+            print("═" * 60)
             return False
 
     def check_opportunity(self, market) -> bool:
@@ -188,6 +192,8 @@ class FundingRateArbitrage:
 
             self.arbitrum_connector.print_wallet_balances(self.hyperliquid_address, "HYPERLIQUID", self.hyperliquid_balances)
             self.arbitrum_connector.print_wallet_balances(self.arbitrum_address, "ARBITRUM", self.arbitrum_balances)
+            
+            print("\n" + "─" * 80)
   
             print_hyperliquid_markets_table(self.markets)
             
@@ -195,14 +201,19 @@ class FundingRateArbitrage:
             arbitrage_found = False
             for market in self.markets:
                 if self.check_opportunity(market):
-                    print(f"🎯 Found arbitrage opportunity for {market['coin']}")
                     self.orders_execution(market)
                     arbitrage_found = True
                     break
             
             if not arbitrage_found:
-                print("❌ No arbitrage opportunities found")
-                print()
+                print("\n❌ No arbitrage opportunities found")
+                print("─" * 50)
+            
+            print(f"\n")
+            print("=" * 80)
+            print("=" * 80)
+            print("=" * 80)
+            print("=" * 80)
             time.sleep(10)
         
       
