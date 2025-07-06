@@ -1,0 +1,66 @@
+version: "3.8"
+
+services:
+  funding-arbitrage:
+    build: .
+    container_name: funding-arbitrage-app
+    restart: unless-stopped
+    environment:
+      # Arbitrum Network
+      - ARBITRUM_ADDRESS=${ARBITRUM_ADDRESS}
+      - ARBITRUM_PRIVATE_KEY=${ARBITRUM_PRIVATE_KEY}
+
+      # Hyperliquid
+      - HYPERLIQUID_ADDRESS=${HYPERLIQUID_ADDRESS}
+      - HYPERLIQUID_PRIVATE_KEY=${HYPERLIQUID_PRIVATE_KEY}
+
+      # 1inch API
+      - ONEINCH_API_KEY=${ONEINCH_API_KEY}
+
+      # Python settings
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    networks:
+      - arbitrage-network
+    depends_on:
+      - redis
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import requests; requests.get('http://localhost:8000/health', timeout=5)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  redis:
+    image: redis:7-alpine
+    container_name: funding-arbitrage-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - arbitrage-network
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  redis-data:
+    driver: local
+
+networks:
+  arbitrage-network:
+    driver: bridge
